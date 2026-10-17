@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apply for Loan – EasyLone</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .step { display: none; }
+    .step.active { display: block; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+  <!-- Navbar -->
+  <nav class="bg-white shadow-sm">
+    <div class="max-w-3xl mx-auto px-4 py-4 flex justify-between items-center">
+      <a href="homepage.html" class="text-2xl font-bold text-blue-600">EasyLone</a>
+      <div class="text-sm text-gray-500">Step <span id="current-step">1</span> of 4</div>
+    </div>
+  </nav>
+
+  <!-- Progress Bar -->
+  <div class="bg-white border-b">
+    <div class="max-w-3xl mx-auto px-4 py-3">
+      <div class="w-full bg-gray-200 rounded-full h-2">
+        <div id="progress" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 25%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form Container -->
+  <div class="max-w-3xl mx-auto px-4 py-10">
+
+    <!-- STEP 1: Basic Details -->
+    <div class="step active" id="step1">
+      <h2 class="text-2xl font-bold mb-2">Basic Details</h2>
+      <p class="text-gray-600 mb-8">Let’s start with some simple information about you.</p>
+
+      <div class="space-y-5">
+        <div>
+          <label class="block text-sm font-medium mb-1">Full Name</label>
+          <input type="text" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your full name">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Mobile Number</label>
+          <input type="tel" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="10-digit mobile number">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Email Address</label>
+          <input type="email" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="your@email.com">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">City / Pincode</label>
+          <input type="text" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter city or pincode">
+        </div>
+      </div>
+
+      <div class="mt-10 flex justify-end">
+        <button onclick="nextStep(2)" class="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition">
+          Continue →
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 2: Loan Requirement -->
+    <div class="step" id="step2">
+      <h2 class="text-2xl font-bold mb-2">Loan Requirement</h2>
+      <p class="text-gray-600 mb-8">Tell us what kind of loan you need.</p>
+
+      <div class="space-y-5">
+        <div>
+          <label class="block text-sm font-medium mb-1">Type of Loan</label>
+          <select class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Select loan type</option>
+            <option>Personal Loan</option>
+            <option>Home Loan</option>
+            <option>Car Loan</option>
+            <option>Business Loan</option>
+            <option>Education Loan</option>
+            <option>Gold Loan</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Loan Amount Needed (₹)</label>
+          <input type="number" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g. 500000">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Preferred Tenure</label>
+          <select class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Select tenure</option>
+            <option>12 months</option>
+            <option>24 months</option>
+            <option>36 months</option>
+            <option>48 months</option>
+            <option>60 months</option>
+            <option>More than 5 years</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mt-10 flex justify-between">
+        <button onclick="prevStep(1)" class="text-gray-600 px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition">
+          ← Back
+        </button>
+        <button onclick="nextStep(3)" class="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition">
+          Continue →
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Work & Income -->
+    <div class="step" id="step3">
+      <h2 class="text-2xl font-bold mb-2">Work & Income</h2>
+      <p class="text-gray-600 mb-8">This helps us find the best matching offers for you.</p>
+
+      <div class="space-y-5">
+        <div>
+          <label class="block text-sm font-medium mb-1">Employment Type</label>
+          <select class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Select</option>
+            <option>Salaried</option>
+            <option>Self-Employed</option>
+            <option>Business Owner</option>
+            <option>Student</option>
+            <option>Other</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Monthly Income / Turnover (₹)</label>
+          <input type="number" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g. 45000">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Existing EMIs (if any)</label>
+          <input type="number" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter total monthly EMI amount">
+        </div>
+      </div>
+
+      <div class="mt-10 flex justify-between">
+        <button onclick="prevStep(2)" class="text-gray-600 px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition">
+          ← Back
+        </button>
+        <button onclick="nextStep(4)" class="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition">
+          Continue →
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 4: Consent & Submit -->
+    <div class="step" id="step4">
+      <h2 class="text-2xl font-bold mb-2">Almost Done!</h2>
+      <p class="text-gray-600 mb-8">We will do a <strong>soft credit check</strong>. This will <span class="text-green-600 font-medium">not affect</span> your CIBIL score.</p>
+
+      <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-8">
+        <label class="flex items-start gap-3 cursor-pointer">
+          <input type="checkbox" class="mt-1 w-5 h-5 text-blue-600">
+          <span class="text-sm text-gray-700">
+            I agree to a soft credit check and allow EasyLone to share my details with partner lenders to show me personalized loan offers. I understand this will <strong>not impact my CIBIL score</strong>.
+          </span>
+        </label>
+      </div>
+
+      <div class="mt-10 flex justify-between">
+        <button onclick="prevStep(3)" class="text-gray-600 px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition">
+          ← Back
+        </button>
+        <button onclick="submitForm()" class="bg-green-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-700 transition">
+          See My Loan Offers →
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function nextStep(step) {
+      // Hide all steps
+      document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+      
+      // Show current step
+      document.getElementById('step' + step).classList.add('active');
+      
+      // Update step number
+      document.getElementById('current-step').innerText = step;
+      
+      // Update progress bar
+      const progress = (step / 4) * 100;
+      document.getElementById('progress').style.width = progress + '%';
+      
+      // Scroll to top
+      window.scrollTo(0, 0);
+    }
+
+    function prevStep(step) {
+      nextStep(step);
+    }
+
+    function submitForm() {
+      // For now just show an alert. Later we will redirect to offers page.
+      alert("Thank you! We are finding the best loan offers for you...\n\n(This will later go to the Offers page)");
+      // window.location.href = "offers.html";
+    }
+  </script>
+
+</body>
+</html>
