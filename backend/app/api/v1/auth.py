@@ -5,6 +5,11 @@ from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse, UserLogin
 from app.core.security import get_password_hash, verify_password
 
+# ---- NEW imports (sirf add kiye gaye) ----
+from fastapi.security import OAuth2PasswordRequestForm
+from app.core.security import create_access_token
+from app.api.deps import get_current_user
+
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -58,6 +63,8 @@ def login_user(user_in: UserLogin, db: Session = Depends(get_db)):
     # 4. Toast-ready English success notification mapping
     return {
         "message": "Login successful.",
+        "access_token": create_access_token(user.id),   # NEW
+        "token_type": "bearer",                          # NEW
         "user": {
             "id": user.id,
             "full_name": user.full_name,
@@ -65,3 +72,29 @@ def login_user(user_in: UserLogin, db: Session = Depends(get_db)):
             "role": user.role
         }
     }
+
+
+# ======================= NEW ENDPOINTS (neeche sab naya hai) =======================
+
+@router.post("/token")
+def login_for_swagger(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db),
+):
+    """Form-based login. Used only by the Authorize button in /docs."""
+    user = db.query(User).filter(User.email == form_data.username).first()
+    if not user or not verify_password(form_data.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password. Please try again."
+        )
+    return {
+        "access_token": create_access_token(user.id),
+        "token_type": "bearer",
+    }
+
+
+@router.get("/me", response_model=UserResponse)
+def read_current_user(current_user: User = Depends(get_current_user)):
+    """Return the currently logged-in user. Requires a valid Bearer token."""
+    return current_user
