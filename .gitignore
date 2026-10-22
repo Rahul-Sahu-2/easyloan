@@ -7,3 +7,21 @@ easyloan-venv-temp/
 .env
 node_modules/
 __pycache__/
+# Python
+backend/venv/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Node
+node_modules/
+**/node_modules/
+frontend-react/dist/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Local database
+backend/easyloan.db
