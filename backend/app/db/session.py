@@ -2,6 +2,7 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
+
 # 1. Absolute path setup to force-create database file in the backend root directory
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DATABASE_FILE_PATH = os.path.join(BASE_DIR, "easyloan.db")

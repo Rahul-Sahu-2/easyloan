@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Loan Offers – EasyLone</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+  <!-- Navbar -->
+  <nav class="bg-white shadow-sm sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+      <a href="homepage.html" class="text-2xl font-bold text-blue-600">EasyLone</a>
+      <div class="flex items-center gap-4 text-sm">
+        <a href="profile.html" class="hover:text-blue-600">Profile</a>
+        <a href="my-applications.html" class="hover:text-blue-600">My Applications</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Header -->
+  <section class="bg-white border-b">
+    <div class="max-w-6xl mx-auto px-4 py-8">
+      <h1 class="text-2xl md:text-3xl font-bold mb-2">Your Loan Offers</h1>
+      <p class="text-gray-600">We found <span class="font-semibold text-blue-600">6 matching offers</span> for you based on soft credit check. Your CIBIL score was <strong>not affected</strong>.</p>
+    </div>
+  </section>
+
+  <!-- Filters -->
+  <div class="max-w-6xl mx-auto px-4 py-6">
+    <div class="flex flex-wrap gap-3 items-center">
+      <span class="text-sm font-medium text-gray-600">Sort by:</span>
+      <button class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg">Lowest Interest</button>
+      <button class="px-4 py-2 bg-white border border-gray-300 text-sm rounded-lg hover:bg-gray-50">Lowest EMI</button>
+      <button class="px-4 py-2 bg-white border border-gray-300 text-sm rounded-lg hover:bg-gray-50">Highest Approval Chance</button>
+    </div>
+  </div>
+
+  <!-- Offers List -->
+  <div class="max-w-6xl mx-auto px-4 pb-16 space-y-5">
+
+    <!-- Offer Card 1 -->
+    <div class="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div class="flex items-center gap-4">
+          <div class="w-14 h-14 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 font-bold text-lg">HDFC</div>
+          <div>
+            <h3 class="font-semibold text-lg">HDFC Bank Personal Loan</h3>
+            <p class="text-sm text-gray-500">Approval Chance: <span class="text-green-600 font-medium">High</span></p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center md:text-left">
+          <div>
+            <p class="text-xs text-gray-500">Interest Rate</p>
+            <p class="font-semibold text-lg">10.50% p.a.</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">Monthly EMI</p>
+            <p class="font-semibold text-lg">₹10,850</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">Processing Fee</p>
+            <p class="font-semibold text-lg">1.5%</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">Max Amount</p>
+            <p class="font-semibold text-lg">₹15 Lakh</p>
+          </div>
+        </div>
+
+        <div>
+          <a href="#" class="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition text-sm">
+            Continue with this offer
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Offer Card 2 -->
+    <div class="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div class="flex items-center gap-4">
+          <div class="w-14 h-14 bg-green-100 rounded-lg flex items-center justify-center text-green-700 font-bold text-lg">ICICI</div>
+          <div>
+            <h3 class="font-semibold text-lg">ICICI Bank Personal Loan</h3>
+            <p class="text-sm text-gray-500">Approval Chance: <span class="text-green-600 font-medium">High</span></p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center md:text-left">
+          <div>
+            <p class="text-xs text-gray-500">Interest Rate</p>
+            <p class="font-semibold text-lg">10.75% p.a.</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">Monthly EMI</p>
+            <p class="font-semibold text-lg">₹10,980</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">Processing Fee</p>
+            <p class="font-semibold text-lg">2%</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">Max Amount</p>
+            <p class="font-semibold text-lg">₹20 Lakh</p>
+          </div>
+        </div>
+
+        <div>
+          <a href="#" class="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition text-sm">
+            Continue with this offer
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Offer Card 3 -->
+    <div class="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div class="flex items-center gap-4">
+          <div class="w-14 h-14 bg-purple-100 rounded-lg flex items-center justify-center text-purple-700 font-bold text-sm">Bajaj</div>
+          <div>
+            <h3 class="font-semibold text-lg">Bajaj Finserv Personal Loan</h3>
+            <p class="text-sm text-gray-500">Approval Chance: <span class="text-yellow-600 font-medium">Medium</span></p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center md:text-left">
+          <div>
+            <p class="text-xs text-gray-500">Interest Rate</p>
+            <p class="font-semibold text-lg">12.00% p.a.</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">Monthly EMI</p>
+            <p class="font-semibold text-lg">₹11,450</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">Processing Fee</p>
+            <p class="font-semibold text-lg">Up to 3%</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">Max Amount</p>
+            <p class="font-semibold text-lg">₹25 Lakh</p>
+          </div>
+        </div>
+
+        <div>
+          <a href="#" class="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition text-sm">
+            Continue with this offer
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Offer Card 4 -->
+    <div class="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div class="flex items-center gap-4">
+          <div class="w-14 h-14 bg-orange-100 rounded-lg flex items-center justify-center text-orange-700 font-bold text-sm">Tata</div>
+          <div>
+            <h3 class="font-semibold text-lg">Tata Capital Personal Loan</h3>
+            <p class="text-sm text-gray-500">Approval Chance: <span class="text-green-600 font-medium">High</span></p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center md:text-left">
+          <div>
+            <p class="text-xs text-gray-500">Interest Rate</p>
+            <p class="font-semibold text-lg">11.25% p.a.</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">Monthly EMI</p>
+            <p class="font-semibold text-lg">₹11,120</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">Processing Fee</p>
+            <p class="font-semibold text-lg">1.5%</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">Max Amount</p>
+            <p class="font-semibold text-lg">₹15 Lakh</p>
+          </div>
+        </div>
+
+        <div>
+          <a href="#" class="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition text-sm">
+            Continue with this offer
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Important Note -->
+  <div class="max-w-6xl mx-auto px-4 pb-16">
+    <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 text-sm text-blue-800">
+      <strong>Important:</strong> Selecting an offer will take you to the next step with that lender. The final hard credit check will happen only with the bank/NBFC you choose. Soft check already done — your CIBIL score is safe.
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-gray-900 text-gray-400 py-8">
+    <div class="max-w-6xl mx-auto px-4 text-center text-sm">
+      <p>© 2026 EasyLone. All rights reserved.</p>
+    </div>
+  </footer>
+
+</body>
+</html>

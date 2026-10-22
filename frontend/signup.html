@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up – EasyLone</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .error { border-color: #ef4444 !important; }
+    .error-message { color: #ef4444; font-size: 0.875rem; margin-top: 0.25rem; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+  <!-- Navbar -->
+  <nav class="bg-white shadow-sm">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+      <a href="homepage.html" class="text-2xl font-bold text-blue-600">EasyLone</a>
+      <a href="login.html" class="text-sm font-medium text-blue-600 hover:underline">Already have an account? Login</a>
+    </div>
+  </nav>
+
+  <!-- Sign Up Form -->
+  <div class="min-h-screen flex items-center justify-center px-4 py-12">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-sm border border-gray-100 p-8">
+
+      <div class="text-center mb-8">
+        <h1 class="text-2xl font-bold text-gray-900">Create your account</h1>
+        <p class="text-gray-600 mt-2 text-sm">Join EasyLone and apply for loans the smart way</p>
+      </div>
+
+      <form id="signupForm" class="space-y-5" novalidate>
+        <!-- Full Name -->
+        <div>
+          <label class="block text-sm font-medium mb-1">Full Name</label>
+          <input type="text" id="fullName" placeholder="Enter your full name"
+            class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <p class="error-message hidden" id="nameError">Please enter a valid name (min 3 characters)</p>
+        </div>
+
+        <!-- Mobile Number -->
+        <div>
+          <label class="block text-sm font-medium mb-1">Mobile Number</label>
+          <input type="tel" id="mobile" placeholder="10-digit mobile number"
+            class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <p class="error-message hidden" id="mobileError">Please enter a valid 10-digit mobile number</p>
+        </div>
+
+        <!-- Email -->
+        <div>
+          <label class="block text-sm font-medium mb-1">Email Address</label>
+          <input type="email" id="email" placeholder="your@email.com"
+            class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <p class="error-message hidden" id="emailError">Please enter a valid email address</p>
+        </div>
+
+        <!-- Password -->
+        <div>
+          <label class="block text-sm font-medium mb-1">Create Password</label>
+          <input type="password" id="password" placeholder="Minimum 8 characters"
+            class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <p class="error-message hidden" id="passwordError">Password must be at least 8 characters</p>
+        </div>
+
+        <!-- Confirm Password -->
+        <div>
+          <label class="block text-sm font-medium mb-1">Confirm Password</label>
+          <input type="password" id="confirmPassword" placeholder="Re-enter password"
+            class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <p class="error-message hidden" id="confirmError">Passwords do not match</p>
+        </div>
+
+        <!-- Terms -->
+        <div class="flex items-start gap-3">
+          <input type="checkbox" id="terms" class="mt-1 w-4 h-4 text-blue-600 rounded">
+          <label class="text-sm text-gray-600">
+            I agree to the <a href="#" class="text-blue-600 hover:underline">Terms & Conditions</a> and <a href="#" class="text-blue-600 hover:underline">Privacy Policy</a>
+          </label>
+        </div>
+        <p class="error-message hidden" id="termsError">You must agree to the Terms & Conditions</p>
+
+        <!-- Submit Button -->
+        <button type="submit"
+          class="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition">
+          Create Account
+        </button>
+      </form>
+
+      <div class="flex items-center my-6">
+        <div class="flex-1 border-t border-gray-200"></div>
+        <span class="px-4 text-sm text-gray-400">or</span>
+        <div class="flex-1 border-t border-gray-200"></div>
+      </div>
+
+      <p class="text-center text-sm text-gray-600">
+        Already have an account?
+        <a href="login.html" class="text-blue-600 font-medium hover:underline">Login</a>
+      </p>
+
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('signupForm');
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault(); // Stop form from submitting normally
+      let isValid = true;
+
+      // Reset previous errors
+      document.querySelectorAll('.error-message').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('input').forEach(el => el.classList.remove('error'));
+
+      // Full Name validation
+      const name = document.getElementById('fullName').value.trim();
+      if (name.length < 3 || !/^[a-zA-Z ]+$/.test(name)) {
+        showError('fullName', 'nameError');
+        isValid = false;
+      }
+
+      // Mobile validation
+      const mobile = document.getElementById('mobile').value.trim();
+      if (!/^[0-9]{10}$/.test(mobile)) {
+        showError('mobile', 'mobileError');
+        isValid = false;
+      }
+
+      // Email validation
+      const email = document.getElementById('email').value.trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showError('email', 'emailError');
+        isValid = false;
+      }
+
+      // Password validation
+      const password = document.getElementById('password').value;
+      if (password.length < 8) {
+        showError('password', 'passwordError');
+        isValid = false;
+      }
+
+      // Confirm Password validation
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      if (password !== confirmPassword) {
+        showError('confirmPassword', 'confirmError');
+        isValid = false;
+      }
+
+      // Terms validation
+      if (!document.getElementById('terms').checked) {
+        document.getElementById('termsError').classList.remove('hidden');
+        isValid = false;
+      }
+
+      // If everything is valid
+      if (isValid) {
+        alert('Account created successfully! (This will later redirect to dashboard or login)');
+        // window.location.href = "login.html";
+      }
+    });
+
+    function showError(inputId, errorId) {
+      document.getElementById(inputId).classList.add('error');
+      document.getElementById(errorId).classList.remove('hidden');
+    }
+  </script>
+
+</body>
+</html>

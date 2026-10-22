@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard – EasyLone</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+  <!-- Top Navbar -->
+  <nav class="bg-white shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <a href="homepage.html" class="text-2xl font-bold text-blue-600">EasyLone</a>
+        <span class="text-sm bg-gray-200 text-gray-600 px-2 py-1 rounded">Admin</span>
+      </div>
+      <div class="text-sm text-gray-600">
+        Welcome, Admin
+      </div>
+    </div>
+  </nav>
+
+  <div class="max-w-7xl mx-auto px-4 py-8">
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
+      <div class="bg-white rounded-xl p-5 border border-gray-200">
+        <p class="text-sm text-gray-500">Total Applications</p>
+        <p class="text-2xl font-bold mt-1">128</p>
+      </div>
+      <div class="bg-white rounded-xl p-5 border border-gray-200">
+        <p class="text-sm text-gray-500">Under Review</p>
+        <p class="text-2xl font-bold mt-1 text-yellow-600">34</p>
+      </div>
+      <div class="bg-white rounded-xl p-5 border border-gray-200">
+        <p class="text-sm text-gray-500">Approved</p>
+        <p class="text-2xl font-bold mt-1 text-green-600">67</p>
+      </div>
+      <div class="bg-white rounded-xl p-5 border border-gray-200">
+        <p class="text-sm text-gray-500">Rejected</p>
+        <p class="text-2xl font-bold mt-1 text-red-600">27</p>
+      </div>
+    </div>
+
+    <!-- Applications Table -->
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div class="px-6 py-4 border-b flex justify-between items-center">
+        <h2 class="text-lg font-semibold">Recent Applications</h2>
+        <div class="flex gap-2">
+          <select class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm">
+            <option>All Status</option>
+            <option>Under Review</option>
+            <option>Approved</option>
+            <option>Rejected</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 text-gray-600">
+            <tr>
+              <th class="text-left px-6 py-3 font-medium">Applicant</th>
+              <th class="text-left px-6 py-3 font-medium">Loan Type</th>
+              <th class="text-left px-6 py-3 font-medium">Amount</th>
+              <th class="text-left px-6 py-3 font-medium">Bank</th>
+              <th class="text-left px-6 py-3 font-medium">Date</th>
+              <th class="text-left px-6 py-3 font-medium">Status</th>
+              <th class="text-left px-6 py-3 font-medium">Action</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+
+            <!-- Row 1 -->
+            <tr class="hover:bg-gray-50">
+              <td class="px-6 py-4">
+                <div class="font-medium">Rahul Kumar</div>
+                <div class="text-xs text-gray-500">9876543210</div>
+              </td>
+              <td class="px-6 py-4">Personal Loan</td>
+              <td class="px-6 py-4">₹5,00,000</td>
+              <td class="px-6 py-4">HDFC Bank</td>
+              <td class="px-6 py-4">17 Oct 2026</td>
+              <td class="px-6 py-4">
+                <span class="px-2.5 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full">Under Review</span>
+              </td>
+              <td class="px-6 py-4">
+                <button class="text-blue-600 hover:underline text-sm">View</button>
+              </td>
+            </tr>
+
+            <!-- Row 2 -->
+            <tr class="hover:bg-gray-50">
+              <td class="px-6 py-4">
+                <div class="font-medium">Priya Sharma</div>
+                <div class="text-xs text-gray-500">9123456780</div>
+              </td>
+              <td class="px-6 py-4">Personal Loan</td>
+              <td class="px-6 py-4">₹3,50,000</td>
+              <td class="px-6 py-4">ICICI Bank</td>
+              <td class="px-6 py-4">16 Oct 2026</td>
+              <td class="px-6 py-4">
+                <span class="px-2.5 py-1 bg-green-100 text-green-700 text-xs rounded-full">Approved</span>
+              </td>
+              <td class="px-6 py-4">
+                <button class="text-blue-600 hover:underline text-sm">View</button>
+              </td>
+            </tr>
+
+            <!-- Row 3 -->
+            <tr class="hover:bg-gray-50">
+              <td class="px-6 py-4">
+                <div class="font-medium">Amit Patel</div>
+                <div class="text-xs text-gray-500">9988776655</div>
+              </td>
+              <td class="px-6 py-4">Business Loan</td>
+              <td class="px-6 py-4">₹12,00,000</td>
+              <td class="px-6 py-4">Bajaj Finserv</td>
+              <td class="px-6 py-4">15 Oct 2026</td>
+              <td class="px-6 py-4">
+                <span class="px-2.5 py-1 bg-red-100 text-red-700 text-xs rounded-full">Rejected</span>
+              </td>
+              <td class="px-6 py-4">
+                <button class="text-blue-600 hover:underline text-sm">View</button>
+              </td>
+            </tr>
+
+            <!-- Row 4 -->
+            <tr class="hover:bg-gray-50">
+              <td class="px-6 py-4">
+                <div class="font-medium">Sneha Reddy</div>
+                <div class="text-xs text-gray-500">9876501234</div>
+              </td>
+              <td class="px-6 py-4">Home Loan</td>
+              <td class="px-6 py-4">₹45,00,000</td>
+              <td class="px-6 py-4">SBI</td>
+              <td class="px-6 py-4">14 Oct 2026</td>
+              <td class="px-6 py-4">
+                <span class="px-2.5 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full">Under Review</span>
+              </td>
+              <td class="px-6 py-4">
+                <button class="text-blue-600 hover:underline text-sm">View</button>
+              </td>
+            </tr>
+
+            <!-- Row 5 -->
+            <tr class="hover:bg-gray-50">
+              <td class="px-6 py-4">
+                <div class="font-medium">Vikram Singh</div>
+                <div class="text-xs text-gray-500">9765432109</div>
+              </td>
+              <td class="px-6 py-4">Car Loan</td>
+              <td class="px-6 py-4">₹8,50,000</td>
+              <td class="px-6 py-4">HDFC Bank</td>
+              <td class="px-6 py-4">13 Oct 2026</td>
+              <td class="px-6 py-4">
+                <span class="px-2.5 py-1 bg-green-100 text-green-700 text-xs rounded-full">Approved</span>
+              </td>
+              <td class="px-6 py-4">
+                <button class="text-blue-600 hover:underline text-sm">View</button>
+              </td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

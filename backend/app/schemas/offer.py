@@ -7,6 +7,7 @@ class LoanOfferResponse(BaseModel):
     id: int
     application_id: int
     lender_id: int
+    lender_name: str
     offered_amount: Decimal
     interest_rate_percentage: Decimal
     tenure_months: int

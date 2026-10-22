@@ -1,11 +1,16 @@
 
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 
+const API_URL = 'http://127.0.0.1:8000/api/v1'
+
 function Auth() {
-  const [mode, setMode] = useState('login')
+  const location = useLocation()
+  const navigate = useNavigate()
+  const isSignup = location.pathname === '/signup'
+
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -16,22 +21,9 @@ function Auth() {
   const [message, setMessage] = useState('')
   const [messageType, setMessageType] = useState('info')
 
-  const isSignup = mode === 'signup'
-
-  function switchMode(nextMode) {
-    setMode(nextMode)
-    setMessage('')
-    setMessageType('info')
-  }
-
   function handleChange(event) {
     const { name, value } = event.target
-
-    setFormData((previous) => ({
-      ...previous,
-      [name]: value,
-    }))
-
+    setFormData((previous) => ({ ...previous, [name]: value }))
     setMessage('')
   }
 
@@ -61,7 +53,6 @@ function Auth() {
 
     try {
       const endpoint = isSignup ? 'register' : 'login'
-
       const payload = isSignup
         ? {
             full_name: formData.fullName.trim(),
@@ -73,21 +64,16 @@ function Auth() {
             password: formData.password,
           }
 
-      const response = await fetch(
-        `http://127.0.0.1:8000/api/v1/auth/${endpoint}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        }
-      )
+      const response = await fetch(`${API_URL}/auth/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
 
-      const data = await response.json()
+      const data = await response.json().catch(() => null)
 
       if (!response.ok) {
-        const detail = data.detail
+        const detail = data?.detail
         const errorMessage = Array.isArray(detail)
           ? detail.map((item) => item.msg).join(', ')
           : typeof detail === 'string'
@@ -100,29 +86,24 @@ function Auth() {
       if (isSignup) {
         setMessage('Account created successfully! You can now log in.')
         setMessageType('success')
-        setMode('login')
-        setFormData((previous) => ({
-          ...previous,
-          password: '',
-        }))
+        setFormData((previous) => ({ ...previous, password: '' }))
       } else {
-        const fullName = data.user?.full_name || 'there'
+        const user = data?.user
 
-        setMessage(`Welcome, ${fullName}! Login successful.`)
-        setMessageType('success')
-        setFormData((previous) => ({
-          ...previous,
-          password: '',
-        }))
+        if (!user?.id) {
+          throw new Error(
+            'Login succeeded, but the backend did not return a user ID.'
+          )
+        }
 
-        // The current backend verifies login but does not issue
-        // an authentication token or persistent session.
+        localStorage.setItem('easyloan_user', JSON.stringify(user))
+        navigate('/', { replace: true })
       }
     } catch (error) {
       setMessage(
         error.message === 'Failed to fetch'
           ? 'Cannot reach the backend. Make sure FastAPI is running.'
-          : error.message
+          : error.message || 'Something went wrong. Please try again.'
       )
       setMessageType('error')
     } finally {
@@ -138,7 +119,7 @@ function Auth() {
         <div className="grid w-full max-w-5xl overflow-hidden rounded-2xl bg-white shadow-lg md:grid-cols-2">
           <section className="hidden bg-gradient-to-br from-blue-600 to-blue-800 p-10 text-white md:flex md:flex-col md:justify-center">
             <Link to="/" className="mb-10 text-3xl font-bold">
-              EasyLone
+              EasyLoan
             </Link>
 
             <h1 className="mb-4 text-3xl font-bold leading-tight">
@@ -146,13 +127,14 @@ function Auth() {
             </h1>
 
             <p className="leading-7 text-blue-100">
-              Explore the EasyLone demo and see how a simpler
-              loan application experience could work.
+              Explore the EasyLoan demo and experience a simpler loan
+              application journey.
             </p>
 
             <div className="mt-8 rounded-xl border border-white/20 bg-white/10 p-4 text-sm leading-6 text-blue-50">
-              Create an account or log in to try the connected
-              authentication demo.
+              {isSignup
+                ? 'Create your account to get started.'
+                : 'Log in to continue to EasyLoan.'}
             </div>
           </section>
 
@@ -161,11 +143,11 @@ function Auth() {
               to="/"
               className="mb-6 inline-block text-sm font-medium text-blue-600 hover:text-blue-700 md:hidden"
             >
-              ← Back to EasyLone
+              ← Back to EasyLoan
             </Link>
 
             <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-blue-600">
-              Welcome to EasyLone
+              Welcome to EasyLoan
             </p>
 
             <h2 className="text-3xl font-bold">
@@ -174,44 +156,11 @@ function Auth() {
 
             <p className="mt-2 text-sm text-gray-500">
               {isSignup
-                ? 'Enter your details to get started.'
-                : 'Enter your details to continue.'}
+                ? 'Enter your details to create an account.'
+                : 'Enter your credentials to log in.'}
             </p>
 
-            <div
-              className="mt-8 grid grid-cols-2 rounded-lg bg-gray-100 p-1"
-              aria-label="Authentication mode"
-            >
-              <button
-                type="button"
-                onClick={() => switchMode('login')}
-                aria-pressed={!isSignup}
-                disabled={isLoading}
-                className={`rounded-md px-4 py-2.5 text-sm font-semibold transition ${
-                  !isSignup
-                    ? 'bg-white text-blue-700 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-800'
-                }`}
-              >
-                Login
-              </button>
-
-              <button
-                type="button"
-                onClick={() => switchMode('signup')}
-                aria-pressed={isSignup}
-                disabled={isLoading}
-                className={`rounded-md px-4 py-2.5 text-sm font-semibold transition ${
-                  isSignup
-                    ? 'bg-white text-blue-700 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-800'
-                }`}
-              >
-                Create Account
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+            <form onSubmit={handleSubmit} className="mt-8 space-y-5">
               {isSignup && (
                 <div>
                   <label
@@ -220,7 +169,6 @@ function Auth() {
                   >
                     Full name
                   </label>
-
                   <input
                     id="fullName"
                     name="fullName"
@@ -232,7 +180,7 @@ function Auth() {
                     required
                     minLength={2}
                     disabled={isLoading}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   />
                 </div>
               )}
@@ -244,7 +192,6 @@ function Auth() {
                 >
                   Email address
                 </label>
-
                 <input
                   id="email"
                   name="email"
@@ -255,7 +202,7 @@ function Auth() {
                   placeholder="you@example.com"
                   required
                   disabled={isLoading}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 />
               </div>
 
@@ -272,24 +219,18 @@ function Auth() {
                     id="password"
                     name="password"
                     type={showPassword ? 'text' : 'password'}
-                    autoComplete={
-                      isSignup ? 'new-password' : 'current-password'
-                    }
+                    autoComplete={isSignup ? 'new-password' : 'current-password'}
                     value={formData.password}
                     onChange={handleChange}
                     placeholder="At least 8 characters"
                     required
                     minLength={8}
                     disabled={isLoading}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 pr-20 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 pr-20 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   />
-
                   <button
                     type="button"
                     onClick={() => setShowPassword((value) => !value)}
-                    aria-label={
-                      showPassword ? 'Hide password' : 'Show password'
-                    }
                     disabled={isLoading}
                     className="absolute inset-y-0 right-3 text-sm font-medium text-blue-600 hover:text-blue-800"
                   >
@@ -328,22 +269,28 @@ function Auth() {
             </form>
 
             <p className="mt-6 text-center text-sm text-gray-500">
-              {isSignup
-                ? 'Already have an account?'
-                : "Don't have an account?"}{' '}
-              <button
-                type="button"
-                onClick={() => switchMode(isSignup ? 'login' : 'signup')}
-                disabled={isLoading}
+              {isSignup ? 'Already have an account?' : "Don't have an account?"}{' '}
+              <Link
+                to={isSignup ? '/login' : '/signup'}
                 className="font-semibold text-blue-600 hover:text-blue-800"
               >
                 {isSignup ? 'Login' : 'Sign up'}
-              </button>
+              </Link>
             </p>
 
+            {isSignup && messageType === 'success' && (
+              <button
+                type="button"
+                onClick={() => navigate('/login')}
+                className="mt-4 w-full rounded-lg border border-blue-600 px-5 py-3 font-semibold text-blue-700 hover:bg-blue-50"
+              >
+                Go to Login
+              </button>
+            )}
+
             <p className="mt-6 text-center text-xs leading-5 text-gray-400">
-              Demo project. Your credentials are sent to the EasyLone
-              development backend for registration or login.
+              Demo project. Authentication requests are sent to your development
+              backend.
             </p>
           </section>
         </div>

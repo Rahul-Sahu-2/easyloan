@@ -1,68 +1,241 @@
-import datetime
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from typing import List
+
+from datetime import datetime, timedelta
 from decimal import Decimal
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.orm import Session
+
 from app.db.session import get_db
-from app.models.offer import LoanOffer
 from app.models.application import LoanApplication
-from app.schemas.offer import LoanOfferResponse
+from app.models.offer import LoanOffer
+from app.models.lender import Lender
 
-router = APIRouter(prefix="/offers", tags=["Loan Offers"])
+router = APIRouter(prefix="/offers", tags=["Offers"])
 
-@router.get("/application/{application_id}", response_model=List[LoanOfferResponse])
+
+def serialize_offer(offer: LoanOffer, db: Session):
+    lender = db.query(Lender).filter(Lender.id == offer.lender_id).first()
+
+    return {
+        "id": offer.id,
+        "application_id": offer.application_id,
+        "lender_id": offer.lender_id,
+        "lender_name": lender.lender_name if lender else f"Demo Lender {offer.lender_id}",
+        "offered_amount": offer.offered_amount,
+        "interest_rate_percentage": offer.interest_rate_percentage,
+        "tenure_months": offer.tenure_months,
+        "processing_fees": offer.processing_fees,
+        "valid_until": offer.valid_until,
+        "status": offer.status,
+        "created_at": offer.created_at,
+        "updated_at": offer.updated_at,
+    }
+
+
+@router.get("/application/{application_id}")
 def get_application_offers(
-    application_id: int, 
-    user_id: int,  # Temporary query parameter until JWT is active
-    db: Session = Depends(get_db)
+    application_id: int,
+    user_id: int = Query(...),
+    db: Session = Depends(get_db),
 ):
-    """
-    Retrieves all competitive contractual loan offers generated for a specific application ID.
-    Automatically generates mock offers if the application is UNDER_REVIEW for instant simulation.
-    """
-    # 1. Verify application ownership constraints
-    application = db.query(LoanApplication).filter(
-        LoanApplication.id == application_id,
-        LoanApplication.user_id == user_id
-    ).first()
-    
+    application = (
+        db.query(LoanApplication)
+        .filter(
+            LoanApplication.id == application_id,
+            LoanApplication.user_id == user_id,
+        )
+        .first()
+    )
+
     if not application:
+        raise HTTPException(status_code=404, detail="Application not found.")
+
+    if application.status in ("CANCELLED", "REJECTED", "APPROVED"):
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Loan application not found or unauthorized access."
+            status_code=400,
+            detail=f"Cannot retrieve offers because the application status is {application.status}.",
         )
 
-    # 2. Extract existing offer rows matching parameters
-    offers = db.query(LoanOffer).filter(LoanOffer.application_id == application_id).all()
+    offers = (
+        db.query(LoanOffer)
+        .filter(LoanOffer.application_id == application_id)
+        .all()
+    )
 
-    # 3. Automation engine: If status is UNDER_REVIEW and no offers exist, seed simulated bank returns
     if application.status == "UNDER_REVIEW" and not offers:
-        future_expiry = datetime.datetime.utcnow() + datetime.timedelta(days=30)
-        
-        # Calculate matching financial metrics criteria bounds
-        req_amt = Decimal(str(application.requested_amount))
-        
-        mock_offers = [
-            LoanOffer(
-                application_id=application_id, lender_id=1,
-                offered_amount=req_amt, interest_rate_percentage=Decimal("10.50"),
-                tenure_months=24, processing_fees=Decimal("999.00"), valid_until=future_expiry
-            ),
-            LoanOffer(
-                application_id=application_id, lender_id=2,
-                offered_amount=req_amt - Decimal("5000.00"), interest_rate_percentage=Decimal("9.99"),
-                tenure_months=36, processing_fees=Decimal("499.00"), valid_until=future_expiry
+        lenders = (
+            db.query(Lender)
+            .filter(
+                Lender.is_active.is_(True),
+                Lender.integration_status == "CONNECTED",
             )
+            .order_by(Lender.id.asc())
+            .limit(2)
+            .all()
+        )
+
+        if not lenders:
+            return []
+
+        requested_amount = Decimal(str(application.requested_amount or 0))
+
+        offer_terms = [
+            {
+                "rate": Decimal("10.50"),
+                "tenure": 24,
+                "fee": Decimal("999.00"),
+            },
+            {
+                "rate": Decimal("9.99"),
+                "tenure": 36,
+                "fee": Decimal("499.00"),
+            },
         ]
-        
-        for offer in mock_offers:
-            db.add(offer)
-            
-        # Transition internal state parameters smoothly to offer visualization phase
+
+        for index, lender in enumerate(lenders):
+            terms = offer_terms[index]
+
+            offered_amount = max(
+                Decimal("0.00"),
+                requested_amount - Decimal("5000.00") * index,
+            )
+
+            new_offer = LoanOffer(
+                application_id=application.id,
+                lender_id=lender.id,
+                offered_amount=offered_amount,
+                interest_rate_percentage=terms["rate"],
+                tenure_months=terms["tenure"],
+                processing_fees=terms["fee"],
+                valid_until=datetime.utcnow() + timedelta(days=30),
+                status="PENDING",
+            )
+            db.add(new_offer)
+
         application.status = "OFFER_AVAILABLE"
         db.commit()
-        
-        # Re-fetch the newly created offer records
-        offers = db.query(LoanOffer).filter(LoanOffer.application_id == application_id).all()
 
-    return offers
+        offers = (
+            db.query(LoanOffer)
+            .filter(LoanOffer.application_id == application_id)
+            .all()
+        )
+
+    return [serialize_offer(offer, db) for offer in offers]
+
+
+@router.post("/{offer_id}/select")
+def select_offer(
+    offer_id: int,
+    user_id: int = Query(...),
+    db: Session = Depends(get_db),
+):
+    offer = (
+        db.query(LoanOffer)
+        .filter(LoanOffer.id == offer_id)
+        .first()
+    )
+
+    if not offer:
+        raise HTTPException(status_code=404, detail="Offer not found.")
+
+    application = (
+        db.query(LoanApplication)
+        .filter(
+            LoanApplication.id == offer.application_id,
+            LoanApplication.user_id == user_id,
+        )
+        .first()
+    )
+
+    if not application:
+        raise HTTPException(status_code=404, detail="Offer not found for this user.")
+
+    if application.status in ("CANCELLED", "REJECTED", "APPROVED"):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot select an offer because the application status is {application.status}.",
+        )
+
+    if offer.valid_until <= datetime.utcnow():
+        offer.status = "EXPIRED"
+        db.commit()
+        raise HTTPException(status_code=400, detail="This offer has expired.")
+
+    if offer.status != "PENDING":
+        raise HTTPException(
+            status_code=400,
+            detail=f"This offer cannot be selected because its status is {offer.status}.",
+        )
+
+    accepted_offer = (
+        db.query(LoanOffer)
+        .filter(
+            LoanOffer.application_id == application.id,
+            LoanOffer.status == "ACCEPTED",
+        )
+        .first()
+    )
+
+    if accepted_offer:
+        raise HTTPException(
+            status_code=400,
+            detail="An offer has already been selected for this application.",
+        )
+
+    offer.status = "ACCEPTED"
+    db.commit()
+    db.refresh(offer)
+
+    return serialize_offer(offer, db)
+
+@router.post("/{offer_id}/reject")
+def reject_offer(
+    offer_id: int,
+    user_id: int = Query(...),
+    db: Session = Depends(get_db),
+):
+    offer = (
+        db.query(LoanOffer)
+        .filter(LoanOffer.id == offer_id)
+        .first()
+    )
+
+    if not offer:
+        raise HTTPException(
+            status_code=404,
+            detail="Offer not found.",
+        )
+
+    application = (
+        db.query(LoanApplication)
+        .filter(
+            LoanApplication.id == offer.application_id,
+            LoanApplication.user_id == user_id,
+        )
+        .first()
+    )
+
+    if not application:
+        raise HTTPException(
+            status_code=404,
+            detail="Offer not found for this user.",
+        )
+
+    if application.status in ("CANCELLED", "REJECTED", "APPROVED"):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot reject an offer because application status is {application.status}.",
+        )
+
+    if offer.status != "PENDING":
+        raise HTTPException(
+            status_code=400,
+            detail=f"This offer cannot be rejected because its status is {offer.status}.",
+        )
+
+    offer.status = "REJECTED"
+    db.commit()
+    db.refresh(offer)
+
+    return serialize_offer(offer, db)

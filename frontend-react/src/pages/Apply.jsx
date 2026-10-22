@@ -2,12 +2,15 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
+const API_URL = 'http://127.0.0.1:8000/api/v1'
+
 const inputClass =
   'w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
 
 function Apply() {
   const [consent, setConsent] = useState(false)
   const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -35,14 +38,14 @@ function Apply() {
     setError('')
   }
 
-  function submitForm(event) {
+  async function submitForm(event) {
     event.preventDefault()
     setError('')
 
     if (
       !formData.fullName.trim() ||
       !/^\d{10}$/.test(formData.mobile) ||
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim()) ||
       !formData.city.trim()
     ) {
       setError(
@@ -75,13 +78,121 @@ function Apply() {
     }
 
     if (!consent) {
-      setError('Please acknowledge the demonstration notice before continuing.')
+      setError(
+        'Please read and accept the consent notice before continuing.'
+      )
       return
     }
 
-    navigate('/offers', {
-      state: { application: formData },
-    })
+    let user
+
+    try {
+      user = JSON.parse(localStorage.getItem('easyloan_user') || 'null')
+    } catch {
+      user = null
+    }
+
+    if (!user?.id) {
+      setError('Please log in before submitting your application.')
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      // Step 1: Save the application in the backend.
+      const response = await fetch(
+        `${API_URL}/applications?user_id=${encodeURIComponent(user.id)}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: JSON.stringify({
+            requested_amount: Number(formData.loanAmount),
+            monthly_income: Number(formData.monthlyIncome),
+            monthly_obligations: Number(formData.existingEmis),
+            purpose: formData.loanType,
+          }),
+        }
+      )
+
+      const data = await response.json().catch(() => null)
+
+      if (!response.ok) {
+        const detail = data?.detail
+
+        const message = Array.isArray(detail)
+          ? detail.map((item) => item.msg).join(', ')
+          : typeof detail === 'string'
+            ? detail
+            : `Application could not be saved (HTTP ${response.status}).`
+
+        throw new Error(message)
+      }
+
+      if (!data?.id) {
+        throw new Error(
+          'The application was saved, but the backend did not return its ID.'
+        )
+      }
+
+      // Step 2: Record consent separately for each demo lender.
+      // If this step fails, do not navigate to the Offers page.
+      for (const lenderId of [1, 2]) {
+        const consentResponse = await fetch(
+          `${API_URL}/applications/route-with-consent?user_id=${encodeURIComponent(user.id)}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+            },
+            body: JSON.stringify({
+              application_id: data.id,
+              lender_id: lenderId,
+            }),
+          }
+        )
+
+        const consentData = await consentResponse.json().catch(() => null)
+
+        if (!consentResponse.ok) {
+          const detail = consentData?.detail
+
+          const message =
+            typeof detail === 'string'
+              ? detail
+              : `Consent or routing failed for demo lender ${lenderId} (HTTP ${consentResponse.status}).`
+
+          throw new Error(
+            `Application ${data.id} was saved, but ${message} You can find the application under your account.`
+          )
+        }
+      }
+
+      // Step 3: Open Offers. Offers.jsx fetches offers from the backend.
+      navigate('/offers', {
+        state: {
+          application: {
+            ...formData,
+            ...data,
+            applicationId: data.id,
+            loanAmount: formData.loanAmount,
+            loanType: formData.loanType,
+          },
+        },
+      })
+    } catch (err) {
+      setError(
+        err.message === 'Failed to fetch'
+          ? 'Cannot reach the backend. Check that FastAPI is running.'
+          : err.message || 'Something went wrong. Please try again.'
+      )
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -113,8 +224,7 @@ function Apply() {
 
           <p className="mt-3 max-w-2xl leading-7 text-gray-600">
             Enter your details below to explore illustrative loan options.
-            All sections are on one page, so you can review your information
-            before continuing.
+            Review your information before continuing.
           </p>
         </div>
 
@@ -122,22 +232,12 @@ function Apply() {
           onSubmit={submitForm}
           className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
         >
-          {/* Personal information */}
           <section className="border-b border-gray-200 p-5 sm:p-8">
-            <div className="mb-6 flex items-start gap-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 font-bold text-blue-600">
-                01
-              </div>
-
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">
-                  Personal information
-                </h2>
-                <p className="mt-1 text-sm text-gray-500">
-                  Basic details to identify your application.
-                </p>
-              </div>
-            </div>
+            <SectionHeading
+              number="01"
+              title="Personal information"
+              description="Basic details to identify your application."
+            />
 
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <Field label="Full name">
@@ -194,22 +294,12 @@ function Apply() {
             </div>
           </section>
 
-          {/* Loan requirements */}
           <section className="border-b border-gray-200 p-5 sm:p-8">
-            <div className="mb-6 flex items-start gap-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 font-bold text-blue-600">
-                02
-              </div>
-
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">
-                  Loan requirements
-                </h2>
-                <p className="mt-1 text-sm text-gray-500">
-                  Specify the loan type, amount and preferred repayment period.
-                </p>
-              </div>
-            </div>
+            <SectionHeading
+              number="02"
+              title="Loan requirements"
+              description="Specify the loan type, amount and preferred repayment period."
+            />
 
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <Field label="Type of loan">
@@ -265,22 +355,12 @@ function Apply() {
             </div>
           </section>
 
-          {/* Financial information */}
           <section className="border-b border-gray-200 p-5 sm:p-8">
-            <div className="mb-6 flex items-start gap-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 font-bold text-blue-600">
-                03
-              </div>
-
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">
-                  Employment & financial information
-                </h2>
-                <p className="mt-1 text-sm text-gray-500">
-                  Provide your income and existing monthly EMI details.
-                </p>
-              </div>
-            </div>
+            <SectionHeading
+              number="03"
+              title="Employment & financial information"
+              description="Provide your income and existing monthly EMI details."
+            />
 
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <Field label="Employment type">
@@ -330,11 +410,12 @@ function Apply() {
             </div>
           </section>
 
-          {/* Demo notice and submission */}
           <section className="bg-gray-50 p-5 sm:p-8">
             <div className="rounded-xl border border-blue-100 bg-blue-50 p-4 sm:p-5">
               <div className="flex items-start gap-3">
-                <span className="text-xl" aria-hidden="true">ⓘ</span>
+                <span className="text-xl" aria-hidden="true">
+                  ⓘ
+                </span>
 
                 <div>
                   <h3 className="font-semibold text-gray-900">
@@ -342,9 +423,13 @@ function Apply() {
                   </h3>
 
                   <p className="mt-1 text-sm leading-6 text-gray-600">
-                    EasyLone currently displays illustrative loan options.
-                    This form does not submit a real loan application,
-                    contact lenders, or perform a credit check.
+                    This application uses a development backend and fictional
+                    lenders. Offers are simulated. No real lender is contacted,
+                    no credit check is performed, and no loan approval is
+                    provided. The current backend saves the requested amount,
+                    monthly income, monthly obligations and loan purpose.
+                    Other personal and employment fields are not yet saved
+                    by this application API.
                   </p>
                 </div>
               </div>
@@ -361,9 +446,11 @@ function Apply() {
                 />
 
                 <span className="text-sm leading-6 text-gray-700">
-                  I understand that this is a demonstration and that my
-                  information will be used to display illustrative offers
-                  within this demo.
+                  I consent to recording my application-sharing consent for
+                  EasyLoan Demo Lender A and EasyLoan Demo Lender B in the
+                  development database for this demonstration. I understand
+                  that the lenders are fictional and no real lender is
+                  contacted.
                 </span>
               </label>
             </div>
@@ -384,9 +471,10 @@ function Apply() {
 
               <button
                 type="submit"
-                className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-7 py-3 font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                disabled={isLoading}
+                className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-7 py-3 font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
-                Explore Loan Offers →
+                {isLoading ? 'Submitting application...' : 'Explore Loan Offers →'}
               </button>
             </div>
           </section>
@@ -396,6 +484,21 @@ function Apply() {
           Demo only. No real credit assessment or loan approval is provided.
         </p>
       </main>
+    </div>
+  )
+}
+
+function SectionHeading({ number, title, description }) {
+  return (
+    <div className="mb-6 flex items-start gap-4">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 font-bold text-blue-600">
+        {number}
+      </div>
+
+      <div>
+        <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
+        <p className="mt-1 text-sm text-gray-500">{description}</p>
+      </div>
     </div>
   )
 }
