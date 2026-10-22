@@ -25,3 +25,6 @@ frontend-react/dist/
 
 # Local database
 backend/easyloan.db
+
+venv/
+*.pyc
