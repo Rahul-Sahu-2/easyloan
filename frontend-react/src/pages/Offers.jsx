@@ -75,9 +75,9 @@ function Offers() {
   }, [applicationId, userId]);
 
   const formatMoney = (value) =>
-    Number(value).toLocaleString("en-IN", {
-      maximumFractionDigits: 2,
-    });
+  Number(value || 0).toLocaleString("en-IN", {
+    maximumFractionDigits: 2,
+  });
 
   async function handleSelectOffer(offer) {
     if (!userId || !applicationId) {
@@ -209,7 +209,7 @@ function Offers() {
       offer.status === "ACCEPTED"
   );
 
-  const isProcessing = 
+  const isProcessing =
     selectingOfferId !== null || rejectingOfferId !== null;
 
   return (
@@ -402,5 +402,5 @@ function Offers() {
     </>
   );
 }
-
+Number(value || 0)
 export default Offers;
