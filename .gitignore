@@ -1,18 +1,9 @@
-# Python
-backend/venv/
-**/__pycache__/
-*.py[cod]
-.pytest_cache/
-
-# Node
-node_modules/
-**/node_modules/
-frontend-react/dist/
-
-# Secrets
+.venv/
+.venv_backup/
+easyloan-venv-temp/
+*.db
+*.local-backup
+*_backup
 .env
-.env.*
-!.env.example
-
-# Local database
-backend/easyloan.db
+node_modules/
+__pycache__/
