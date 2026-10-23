@@ -51,10 +51,7 @@ app = FastAPI(
 )
 setup_global_exception_handlers(app)
 # Allowed origins for your friend's React/Vite development server
-origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
+origins = [ "http://localhost:5173", "http://127.0.0.1:5173", "https://easyloan-sand.vercel.app", ]
 
 app.add_middleware(
     CORSMiddleware,

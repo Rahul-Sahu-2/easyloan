@@ -1,0 +1,19 @@
+# Python virtual environment
+.venv/
+venv/
+
+# Environment variables and secrets
+.env
+.env.*
+
+# Allow example configuration only
+!.env.example
+
+# Python cache
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local SQLite database
+easyloan.db
+*.db
