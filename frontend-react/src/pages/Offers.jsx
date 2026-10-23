@@ -398,9 +398,11 @@ function Offers() {
         </div>
       </div>
 
-      <Footer />
-    </>
-  );
+     ```
+  <Footer />
+</>
+
+);
 }
-Number(value || 0)
+
 export default Offers;
