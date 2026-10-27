@@ -1,7 +1,8 @@
 
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api/v1'
 const initialForm = {
   loanType: '',
   loanAmount: '',
@@ -13,16 +14,89 @@ const initialForm = {
 const inputClass =
   'w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500'
 
+function getLoggedInUser() {
+  try {
+    const user = JSON.parse(localStorage.getItem('easyloan_user') || 'null')
+    return user?.id || user?.user_id ? user : null
+  } catch {
+    return null
+  }
+}
+
 function Eligibility() {
+  const navigate = useNavigate()
+
   const [form, setForm] = useState(initialForm)
   const [error, setError] = useState('')
   const [result, setResult] = useState(false)
+  const [checkingApplications, setCheckingApplications] = useState(false)
 
   function handleChange(event) {
     const { name, value } = event.target
+
     setForm((current) => ({ ...current, [name]: value }))
     setError('')
     setResult(false)
+  }
+
+  async function handleContinueToApplication() {
+    const user = getLoggedInUser()
+
+    // Login is required to access the application flow.
+    if (!user) {
+      navigate('/login')
+      return
+    }
+
+    setCheckingApplications(true)
+    setError('')
+
+    try {
+      const userId = user.id ?? user.user_id
+
+      const response = await fetch(
+        `${API_URL}/applications/me?user_id=${encodeURIComponent(userId)}`
+      )
+
+      if (!response.ok) {
+        throw new Error('Unable to check your existing applications. Please try again.')
+      }
+
+      const data = await response.json()
+
+      const applications = Array.isArray(data)
+        ? data
+        : data.applications || []
+
+      const activeApplications = applications.filter((application) => {
+        const status = String(application.status || '').toUpperCase()
+
+        return !['CANCELLED', 'REJECTED', 'APPROVED'].includes(status)
+      })
+
+      if (activeApplications.length === 0) {
+        navigate('/apply')
+        return
+      }
+
+      const startNew = window.confirm(
+        `You have ${activeApplications.length} active application(s).\n\n` +
+          'Click OK to view your existing applications.\n' +
+          'Click Cancel to start a new application.'
+      )
+
+      if (startNew) {
+        navigate('/my-applications')
+      } else {
+        navigate('/apply')
+      }
+    } catch (err) {
+      setError(
+        err.message || 'Something went wrong while checking your applications.'
+      )
+    } finally {
+      setCheckingApplications(false)
+    }
   }
 
   function handleSubmit(event) {
@@ -64,11 +138,13 @@ function Eligibility() {
       <section className="border-b bg-white">
         <div className="mx-auto max-w-3xl px-4 py-10 text-center">
           <p className="mb-2 text-sm font-semibold text-blue-600">
-            EASYLONE ELIGIBILITY CHECKER
+            EASYLOAN ELIGIBILITY DEMO
           </p>
+
           <h1 className="mb-3 text-3xl font-bold">
             Check Your Loan Eligibility
           </h1>
+
           <p className="text-gray-600">
             Share a few details to try our eligibility demo.
             No credit check is performed.
@@ -80,9 +156,13 @@ function Eligibility() {
         <div className="rounded-xl border border-gray-200 bg-white p-6 md:p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="loanType" className="mb-1 block text-sm font-medium">
+              <label
+                htmlFor="loanType"
+                className="mb-1 block text-sm font-medium"
+              >
                 What type of loan do you need?
               </label>
+
               <select
                 id="loanType"
                 name="loanType"
@@ -101,9 +181,13 @@ function Eligibility() {
             </div>
 
             <div>
-              <label htmlFor="loanAmount" className="mb-1 block text-sm font-medium">
+              <label
+                htmlFor="loanAmount"
+                className="mb-1 block text-sm font-medium"
+              >
                 Loan Amount Needed (₹)
               </label>
+
               <input
                 id="loanAmount"
                 name="loanAmount"
@@ -119,9 +203,13 @@ function Eligibility() {
             </div>
 
             <div>
-              <label htmlFor="employment" className="mb-1 block text-sm font-medium">
+              <label
+                htmlFor="employment"
+                className="mb-1 block text-sm font-medium"
+              >
                 Employment Type
               </label>
+
               <select
                 id="employment"
                 name="employment"
@@ -138,9 +226,13 @@ function Eligibility() {
             </div>
 
             <div>
-              <label htmlFor="monthlyIncome" className="mb-1 block text-sm font-medium">
+              <label
+                htmlFor="monthlyIncome"
+                className="mb-1 block text-sm font-medium"
+              >
                 Monthly Income (₹)
               </label>
+
               <input
                 id="monthlyIncome"
                 name="monthlyIncome"
@@ -156,9 +248,13 @@ function Eligibility() {
             </div>
 
             <div>
-              <label htmlFor="existingEmis" className="mb-1 block text-sm font-medium">
+              <label
+                htmlFor="existingEmis"
+                className="mb-1 block text-sm font-medium"
+              >
                 Existing Monthly EMIs (₹)
               </label>
+
               <input
                 id="existingEmis"
                 name="existingEmis"
@@ -174,7 +270,10 @@ function Eligibility() {
             </div>
 
             {error && (
-              <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+              <p
+                role="alert"
+                className="rounded-lg bg-red-50 p-3 text-sm text-red-700"
+              >
                 {error}
               </p>
             )}
@@ -195,20 +294,27 @@ function Eligibility() {
               <h2 className="mb-2 text-lg font-semibold text-blue-900">
                 Demo check completed
               </h2>
+
               <p className="mb-4 text-sm leading-6 text-blue-900">
                 Your details passed basic input validation. This demo does
                 not determine whether you qualify for a loan or guarantee
                 that a lender will make an offer.
               </p>
+
               <p className="mb-4 text-sm text-blue-900">
                 Loan type: {form.loanType}
               </p>
-              <Link
-                to="/apply"
-                className="inline-block rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+
+              <button
+                type="button"
+                onClick={handleContinueToApplication}
+                disabled={checkingApplications}
+                className="inline-block rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-wait disabled:opacity-60"
               >
-                Continue to Application →
-              </Link>
+                {checkingApplications
+                  ? 'Checking applications...'
+                  : 'Continue to Application →'}
+              </button>
             </div>
           )}
 
@@ -217,6 +323,15 @@ function Eligibility() {
             and this result is not a loan approval or an actual eligibility
             assessment.
           </p>
+
+          <div className="mt-6 border-t border-gray-200 pt-4 text-center">
+            <Link
+              to="/my-applications"
+              className="text-sm font-medium text-blue-700 hover:underline"
+            >
+              View My Applications
+            </Link>
+          </div>
         </div>
       </main>
     </div>
