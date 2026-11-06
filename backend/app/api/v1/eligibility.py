@@ -1,59 +1,79 @@
+from decimal import Decimal
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from decimal import Decimal
+
 from app.db.session import get_db
 from app.models.application import LoanApplication
+from app.core.loan_rules import calculate_max_eligible_loan
 
-router = APIRouter(prefix="/eligibility", tags=["Preliminary Eligibility"])
+
+router = APIRouter(
+    prefix="/eligibility",
+    tags=["Preliminary Eligibility"]
+)
+
 
 @router.get("/{application_id}", status_code=status.HTTP_200_OK)
-def check_loan_eligibility(application_id: int, db: Session = Depends(get_db)):
-    """
-    Evaluates preliminary loan eligibility based on deterministic Debt-to-Income (DTI) criteria.
-    """
-    # 1. Fetch target application context row from SQLite matching parameter indices
-    application = db.query(LoanApplication).filter(LoanApplication.id == application_id).first()
+def check_loan_eligibility(
+    application_id: int,
+    db: Session = Depends(get_db)
+):
+    application = (
+        db.query(LoanApplication)
+        .filter(LoanApplication.id == application_id)
+        .first()
+    )
+
     if not application:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=404,
             detail="Loan application not found."
         )
 
-    # 2. Extract operational numeric bounds smoothly using Decimal type parsing
     income = Decimal(str(application.monthly_income))
-    obligations = Decimal(str(application.monthly_obligations))
     requested_amount = Decimal(str(application.requested_amount))
+    loan_type = application.purpose
 
-    # 3. Calculate Debt-to-Income (DTI) metric bounds
-    # formula: (Existing Monthly Obligations / Total Monthly Income) * 100
-    if income <= 0:
-        return {
-            "application_id": application_id,
-            "eligible": False,
-            "reason": "Monthly income must be greater than zero.",
-            "dti_ratio_percentage": 0.00,
-            "maximum_suggested_emi": 0.00
-        }
+    try:
+        result = calculate_max_eligible_loan(
+            monthly_income=income,
+            loan_type=loan_type
+        )
 
-    dti_ratio = (obligations / income) * 100
-    
-    # Financial baseline rule: A borrower is typically eligible if their current obligations take up less than 50% of income.
-    is_eligible = True
-    reason = "Preliminary criteria satisfied. Application is within safe debt thresholds."
-    
-    # Maximum recommended EMI cap bounds (45% of total income minus existing liabilities)
-    max_suggested_emi = (income * Decimal("0.45")) - obligations
-    if max_suggested_emi < 0:
-        max_suggested_emi = Decimal("0.00")
+    except ValueError as error:
+        raise HTTPException(
+            status_code=400,
+            detail=str(error)
+        )
 
-    if dti_ratio >= 50:
-        is_eligible = False
-        reason = "Debt-to-Income (DTI) ratio exceeds safe thresholds. Existing monthly obligations are too high relative to current income levels."
+    maximum_amount = result["maximum_eligible_amount"]
+
+    requested_amount_eligible = (
+        result["eligible"]
+        and requested_amount <= maximum_amount
+    )
 
     return {
-        "application_id": application_id,
-        "eligible": is_eligible,
-        "reason": reason,
-        "dti_ratio_percentage": round(float(dti_ratio), 2),
-        "maximum_suggested_emi": round(float(max_suggested_emi), 2)
+        "application_id": application.id,
+        "loan_type": loan_type,
+        "monthly_income": income,
+        "requested_amount": requested_amount,
+        "eligible": requested_amount_eligible,
+        "requested_amount_eligible": requested_amount_eligible,
+        "reason": (
+            "Requested amount is within the preliminary eligibility limit."
+            if requested_amount_eligible
+            else (
+                f"Requested amount exceeds your estimated maximum eligibility "
+                f"of ₹{maximum_amount}."
+                if result["eligible"]
+                else result["reason"]
+            )
+        ),
+        "maximum_affordable_emi": result["maximum_affordable_emi"],
+        "maximum_eligible_amount": maximum_amount,
+        "category_max_limit": result["category_max_limit"],
+        "interest_rate": result["interest_rate"],
+        "max_tenure_months": result["max_tenure_months"],
     }

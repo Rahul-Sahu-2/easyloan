@@ -12,6 +12,12 @@ function Apply() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
+  // PIN verification states
+  const [pinLoading, setPinLoading] = useState(false)
+  const [pinVerified, setPinVerified] = useState(false)
+  const [pinError, setPinError] = useState('')
+  const [pinDetails, setPinDetails] = useState(null)
+
   const [formData, setFormData] = useState({
     fullName: '',
     mobile: '',
@@ -38,22 +44,90 @@ function Apply() {
     setError('')
   }
 
+  // Step 2: Verify PIN code using postal API
+  async function verifyPincode() {
+    const pincode = formData.city.trim()
+
+    setPinError('')
+    setPinDetails(null)
+    setPinVerified(false)
+
+    if (!/^\d{6}$/.test(pincode)) {
+      setPinError('Please enter a valid 6-digit PIN code.')
+      return
+    }
+
+    setPinLoading(true)
+
+    try {
+      const response = await fetch(
+        `https://api.postalpincode.in/pincode/${pincode}`
+      )
+
+      if (!response.ok) {
+        throw new Error('PIN verification service is unavailable.')
+      }
+
+      const data = await response.json()
+
+      if (
+        !Array.isArray(data) ||
+        data[0]?.Status !== 'Success' ||
+        !data[0]?.PostOffice?.length
+      ) {
+        setPinError(
+          'This PIN code does not exist. Please enter a valid PIN code.'
+        )
+        return
+      }
+
+      const postOffice = data[0].PostOffice[0]
+
+      setPinDetails({
+        district: postOffice.District,
+        state: postOffice.State,
+        postOffice: postOffice.Name,
+      })
+
+      setPinVerified(true)
+    } catch (err) {
+      setPinError(
+        err.message || 'Unable to verify PIN code. Please try again.'
+      )
+    } finally {
+      setPinLoading(false)
+    }
+  }
+
   async function submitForm(event) {
     event.preventDefault()
     setError('')
 
-    if (
-      !formData.fullName.trim() ||
-      !/^\d{10}$/.test(formData.mobile) ||
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim()) ||
-      !formData.city.trim()
-    ) {
+    // Step 1: Mobile and personal information validation
+    if (!formData.fullName.trim()) {
+      setError('Please enter your full name.')
+      return
+    }
+
+    if (!/^[6-9]\d{9}$/.test(formData.mobile)) {
       setError(
-        'Please enter your name, valid 10-digit mobile number, email and city or pincode.'
+        'Please enter a valid 10-digit Indian mobile number starting with 6, 7, 8 or 9.'
       )
       return
     }
 
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      setError('Please enter a valid email address.')
+      return
+    }
+
+    // Step 2: PIN verification is compulsory
+    if (!pinVerified) {
+      setError('Please verify your PIN code before submitting.')
+      return
+    }
+
+    // Loan requirement validation
     if (
       !formData.loanType ||
       !Number.isFinite(Number(formData.loanAmount)) ||
@@ -64,6 +138,7 @@ function Apply() {
       return
     }
 
+    // Employment and financial validation
     if (
       !formData.employment ||
       formData.monthlyIncome === '' ||
@@ -77,6 +152,7 @@ function Apply() {
       return
     }
 
+    // Consent validation
     if (!consent) {
       setError(
         'Please read and accept the consent notice before continuing.'
@@ -84,6 +160,7 @@ function Apply() {
       return
     }
 
+    // User authentication
     let user
 
     try {
@@ -100,7 +177,7 @@ function Apply() {
     setIsLoading(true)
 
     try {
-      // Step 1: Save the application in the backend.
+      // Step 1: Save application in backend
       const response = await fetch(
         `${API_URL}/applications?user_id=${encodeURIComponent(user.id)}`,
         {
@@ -127,7 +204,9 @@ function Apply() {
           ? detail.map((item) => item.msg).join(', ')
           : typeof detail === 'string'
             ? detail
-            : `Application could not be saved (HTTP ${response.status}).`
+            : typeof detail === 'object' && detail !== null
+              ? detail.message || JSON.stringify(detail)
+              : `Application could not be saved (HTTP ${response.status}).`
 
         throw new Error(message)
       }
@@ -138,8 +217,7 @@ function Apply() {
         )
       }
 
-      // Step 2: Record consent separately for each demo lender.
-      // If this step fails, do not navigate to the Offers page.
+      // Step 2: Record consent for each demo lender
       for (const lenderId of [1, 2]) {
         const consentResponse = await fetch(
           `${API_URL}/applications/route-with-consent?user_id=${encodeURIComponent(user.id)}`,
@@ -172,7 +250,7 @@ function Apply() {
         }
       }
 
-      // Step 3: Open Offers. Offers.jsx fetches offers from the backend.
+      // Step 3: Navigate to offers page
       navigate('/offers', {
         state: {
           application: {
@@ -232,6 +310,7 @@ function Apply() {
           onSubmit={submitForm}
           className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
         >
+          {/* Section 1: Personal information */}
           <section className="border-b border-gray-200 p-5 sm:p-8">
             <SectionHeading
               number="01"
@@ -261,8 +340,10 @@ function Apply() {
                   className={inputClass}
                   placeholder="10-digit mobile number"
                   inputMode="numeric"
+                  pattern="[6-9][0-9]{9}"
                   maxLength={10}
                   autoComplete="tel"
+                  title="Enter a 10-digit Indian mobile number starting with 6, 7, 8 or 9."
                   required
                 />
               </Field>
@@ -280,20 +361,57 @@ function Apply() {
                 />
               </Field>
 
-              <Field label="City / Pincode">
-                <input
-                  name="city"
-                  value={formData.city}
-                  onChange={updateField}
-                  className={inputClass}
-                  placeholder="Enter city or pincode"
-                  autoComplete="address-level2"
-                  required
-                />
+              {/* PIN code verification */}
+              <Field label="PIN Code">
+                <div className="flex gap-2">
+                  <input
+                    name="city"
+                    type="text"
+                    value={formData.city}
+                    onChange={(event) => {
+                      updateField(event)
+                      setPinVerified(false)
+                      setPinDetails(null)
+                      setPinError('')
+                    }}
+                    className={inputClass}
+                    placeholder="Enter 6-digit PIN code"
+                    inputMode="numeric"
+                    maxLength={6}
+                    required
+                  />
+
+                  <button
+                    type="button"
+                    onClick={verifyPincode}
+                    disabled={pinLoading || formData.city.length !== 6}
+                    className="shrink-0 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {pinLoading ? 'Checking...' : 'Verify'}
+                  </button>
+                </div>
+
+                {pinError && (
+                  <p role="alert" className="mt-2 text-sm text-red-600">
+                    {pinError}
+                  </p>
+                )}
+
+                {pinVerified && pinDetails && (
+                  <div className="mt-3 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+                    <p className="font-semibold">
+                      ✓ PIN code verified successfully
+                    </p>
+                    <p>Post Office: {pinDetails.postOffice}</p>
+                    <p>District: {pinDetails.district}</p>
+                    <p>State: {pinDetails.state}</p>
+                  </div>
+                )}
               </Field>
             </div>
           </section>
 
+          {/* Section 2: Loan requirements */}
           <section className="border-b border-gray-200 p-5 sm:p-8">
             <SectionHeading
               number="02"
@@ -355,6 +473,7 @@ function Apply() {
             </div>
           </section>
 
+          {/* Section 3: Financial information */}
           <section className="border-b border-gray-200 p-5 sm:p-8">
             <SectionHeading
               number="03"
@@ -410,6 +529,7 @@ function Apply() {
             </div>
           </section>
 
+          {/* Consent and submission */}
           <section className="bg-gray-50 p-5 sm:p-8">
             <div className="rounded-xl border border-blue-100 bg-blue-50 p-4 sm:p-5">
               <div className="flex items-start gap-3">
@@ -474,7 +594,9 @@ function Apply() {
                 disabled={isLoading}
                 className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-7 py-3 font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
-                {isLoading ? 'Submitting application...' : 'Explore Loan Offers →'}
+                {isLoading
+                  ? 'Submitting application...'
+                  : 'Explore Loan Offers →'}
               </button>
             </div>
           </section>

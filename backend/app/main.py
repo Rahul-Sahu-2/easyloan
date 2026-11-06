@@ -1,4 +1,3 @@
-
 import logging
 
 from fastapi import FastAPI
@@ -10,6 +9,7 @@ from app.core.config import settings
 from app.db.session import engine, Base, SessionLocal
 from app.core.exceptions import setup_global_exception_handlers
 from app.api.v1 import auth, applications, eligibility, lenders, offers
+
 import app.models
 from app.models.lender import Lender
 
@@ -17,32 +17,39 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    description=(
-        "EasyLoan Multi-lender loan application "
-        "facilitation platform backend."
-    ),
+    description="EasyLoan Multi-lender loan application facilitation platform backend.",
     version="1.0.0",
 )
 
-setup_global_exception_handlers(app)
-
+# CORS configuration
 origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+]
+
+configured_origins = [
     origin.strip()
     for origin in settings.CORS_ORIGINS.split(",")
     if origin.strip()
 ]
 
+origins = list(set(origins + configured_origins))
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
+
+setup_global_exception_handlers(app)
 
 
 def initialize_demo_lenders():
     db = SessionLocal()
+
     try:
         demo_lenders = [
             "EasyLoan Demo Lender A",
@@ -67,19 +74,22 @@ def initialize_demo_lenders():
                 )
 
         db.commit()
+
     except Exception:
         db.rollback()
         logger.exception("Demo lender initialization failed")
         raise
+
     finally:
         db.close()
 
 
-# Create tables and demo lenders when the application starts.
+# Initialize database
 Base.metadata.create_all(bind=engine)
 initialize_demo_lenders()
 
 
+# Register API routes
 app.include_router(auth.router, prefix=settings.API_V1_STR)
 app.include_router(applications.router, prefix=settings.API_V1_STR)
 app.include_router(eligibility.router, prefix=settings.API_V1_STR)
@@ -113,8 +123,10 @@ def database_health_check():
             "status": "connected",
             "database": "available",
         }
+
     except Exception:
         logger.exception("Database health check failed")
+
         return JSONResponse(
             status_code=503,
             content={
