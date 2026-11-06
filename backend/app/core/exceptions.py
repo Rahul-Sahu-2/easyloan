@@ -1,29 +1,36 @@
-from fastapi import Request, FastAPI
+
+import logging
+
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
 
+logger = logging.getLogger(__name__)
+
+
 def setup_global_exception_handlers(app: FastAPI):
-    """
-    Registers custom interceptors to prevent raw database stack traces 
-    or unexpected system crashes from leaking to the client interface.
-    """
-    
     @app.exception_handler(SQLAlchemyError)
-    def database_exception_handler(request: Request, exc: SQLAlchemyError):
+    async def database_exception_handler(
+        request: Request, exc: SQLAlchemyError
+    ):
+        logger.exception("Database operation failed")
         return JSONResponse(
             status_code=500,
             content={
-                "detail": "A secure database transaction error occurred. Please try again later.",
-                "error_type": "DatabaseStorageFailure"
-            }
+                "detail": "A database error occurred. Please try again later.",
+                "error_type": "DatabaseStorageFailure",
+            },
         )
 
     @app.exception_handler(Exception)
-    def general_exception_handler(request: Request, exc: Exception):
+    async def general_exception_handler(
+        request: Request, exc: Exception
+    ):
+        logger.exception("Unexpected application error")
         return JSONResponse(
             status_code=500,
             content={
-                "detail": "An unexpected internal server exception occurred. Operation halted safely.",
-                "error_type": "InternalServerError"
-            }
+                "detail": "An unexpected server error occurred.",
+                "error_type": "InternalServerError",
+            },
         )

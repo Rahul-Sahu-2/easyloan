@@ -1,28 +1,32 @@
-import os
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
+from app.core.config import settings
 
-# 1. Absolute path setup to force-create database file in the backend root directory
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-DATABASE_FILE_PATH = os.path.join(BASE_DIR, "easyloan.db")
-SQLALCHEMY_DATABASE_URL = f"sqlite:///{DATABASE_FILE_PATH}"
+database_url = settings.DATABASE_URL
 
-print(f"--> Target Database Path: {DATABASE_FILE_PATH}")
-
-# 2. Engine configuration with multithreading support for SQLite
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, 
-    connect_args={"check_same_thread": False}
+connect_args = (
+    {"check_same_thread": False}
+    if database_url.startswith("sqlite")
+    else {}
 )
 
-# 3. Database Session Factory configuration
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+engine = create_engine(
+    database_url,
+    pool_pre_ping=True,
+    connect_args=connect_args,
+)
 
-# 4. Base class declarative mapping system for models
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine,
+)
+
 Base = declarative_base()
 
-# 5. FastAPI Dependency Injection yield generator
+
 def get_db():
     db = SessionLocal()
     try:

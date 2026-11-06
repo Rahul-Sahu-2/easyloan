@@ -3,8 +3,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
-
-const API_URL = 'http://127.0.0.1:8000/api/v1'
+import { API_URL } from '../api'
 
 function formatMoney(value) {
   return Number(value || 0).toLocaleString('en-IN', {
@@ -34,6 +33,11 @@ function getStatusDetails(status) {
     OFFER_AVAILABLE: {
       label: 'Offers available',
       description: 'Simulated loan offers have been generated.',
+      color: 'bg-green-100 text-green-800',
+    },
+    OFFER_SELECTED: {
+      label: 'Offer selected',
+      description: 'You have selected a simulated loan offer.',
       color: 'bg-green-100 text-green-800',
     },
     APPROVED: {
@@ -90,15 +94,21 @@ function MyApplications() {
       }
 
       try {
+        // Step 1: Fetch user applications
         const response = await fetch(
           `${API_URL}/applications/me?user_id=${encodeURIComponent(userId)}`,
-          { headers: { Accept: 'application/json' } }
+          {
+            headers: {
+              Accept: 'application/json',
+            },
+          }
         )
 
         const data = await response.json().catch(() => null)
 
         if (!response.ok) {
           const detail = data?.detail
+
           throw new Error(
             typeof detail === 'string'
               ? detail
@@ -114,11 +124,13 @@ function MyApplications() {
 
         setApplications(data)
 
-        // Fetch offers only for applications that may have offers.
+        // Step 2: Fetch offers for applications that may have offers
         const applicationsWithOffers = data.filter((application) =>
-          ['OFFER_AVAILABLE', 'UNDER_REVIEW'].includes(
-            String(application.status || '').toUpperCase()
-          )
+          [
+            'OFFER_AVAILABLE',
+            'UNDER_REVIEW',
+            'OFFER_SELECTED',
+          ].includes(String(application.status || '').toUpperCase())
         )
 
         const results = await Promise.all(
@@ -126,15 +138,24 @@ function MyApplications() {
             try {
               const offersResponse = await fetch(
                 `${API_URL}/offers/application/${application.id}?user_id=${encodeURIComponent(userId)}`,
-                { headers: { Accept: 'application/json' } }
+                {
+                  headers: {
+                    Accept: 'application/json',
+                  },
+                }
               )
 
-              if (!offersResponse.ok) return [application.id, []]
+              const offersData = await offersResponse
+                .json()
+                .catch(() => null)
 
-              const offers = await offersResponse.json()
+              if (!offersResponse.ok) {
+                return [application.id, []]
+              }
+
               return [
                 application.id,
-                Array.isArray(offers) ? offers : [],
+                Array.isArray(offersData) ? offersData : [],
               ]
             } catch {
               return [application.id, []]
@@ -167,9 +188,12 @@ function MyApplications() {
     }
   }, [])
 
+  // Count accepted offers
   const acceptedCount = Object.values(selectedOffers)
     .flat()
-    .filter((offer) => offer.status === 'ACCEPTED').length
+    .filter(
+      (offer) => String(offer.status || '').toUpperCase() === 'ACCEPTED'
+    ).length
 
   return (
     <>
@@ -177,14 +201,18 @@ function MyApplications() {
 
       <main className="min-h-screen bg-gray-50 px-4 py-10">
         <div className="mx-auto max-w-5xl">
+
+          {/* Page Heading */}
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-blue-600">
                 Your account
               </p>
+
               <h1 className="text-3xl font-bold text-gray-900">
                 Application History
               </h1>
+
               <p className="mt-2 text-gray-600">
                 Track your applications, offers, and selections.
               </p>
@@ -198,35 +226,42 @@ function MyApplications() {
             </Link>
           </div>
 
+          {/* Summary Cards */}
           <div className="mb-6 grid gap-4 sm:grid-cols-3">
             <SummaryCard
               label="Total applications"
               value={applications.length}
             />
+
             <SummaryCard
               label="Under review"
               value={applications.filter(
-                (item) => item.status?.toUpperCase() === 'UNDER_REVIEW'
+                (item) =>
+                  String(item.status || '').toUpperCase() === 'UNDER_REVIEW'
               ).length}
             />
+
             <SummaryCard
               label="Offers selected"
               value={acceptedCount}
             />
           </div>
 
+          {/* Loading */}
           {loading && (
             <div className="rounded-xl border bg-white p-8 text-gray-600">
               Loading your applications and offers...
             </div>
           )}
 
+          {/* Error */}
           {!loading && error && (
             <div
               role="alert"
               className="rounded-xl border border-red-200 bg-red-50 p-5 text-red-700"
             >
               {error}
+
               {error.startsWith('Cannot reach') && (
                 <p className="mt-2 text-sm">
                   Start the backend and refresh this page.
@@ -235,14 +270,17 @@ function MyApplications() {
             </div>
           )}
 
+          {/* Empty State */}
           {!loading && !error && applications.length === 0 && (
             <div className="rounded-xl border border-gray-200 bg-white p-10 text-center">
               <h2 className="text-xl font-semibold text-gray-900">
                 No applications yet
               </h2>
+
               <p className="mt-2 text-gray-600">
                 Your submitted applications will appear here.
               </p>
+
               <Link
                 to="/apply"
                 className="mt-5 inline-flex rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700"
@@ -252,19 +290,28 @@ function MyApplications() {
             </div>
           )}
 
+          {/* Application List */}
           {!loading && !error && applications.length > 0 && (
             <div className="space-y-5">
               {applications.map((application) => {
                 const status = getStatusDetails(application.status)
+
                 const offers = selectedOffers[application.id] || []
+
                 const acceptedOffer = offers.find(
-                  (offer) => offer.status === 'ACCEPTED'
+                  (offer) =>
+                    String(offer.status || '').toUpperCase() === 'ACCEPTED'
                 )
+
                 const hasOffers = offers.length > 0
+
                 const canViewOffers = [
                   'OFFER_AVAILABLE',
                   'UNDER_REVIEW',
-                ].includes(String(application.status || '').toUpperCase())
+                  'OFFER_SELECTED',
+                ].includes(
+                  String(application.status || '').toUpperCase()
+                )
 
                 return (
                   <article
@@ -276,12 +323,15 @@ function MyApplications() {
                         <p className="text-sm text-gray-500">
                           Application #{application.id}
                         </p>
+
                         <h2 className="mt-1 text-xl font-semibold text-gray-900">
                           {application.purpose || 'Loan application'}
                         </h2>
+
                         <p className="mt-2 text-2xl font-bold text-gray-900">
                           ₹{formatMoney(application.requested_amount)}
                         </p>
+
                         <p className="mt-1 text-sm text-gray-500">
                           Requested loan amount
                         </p>
@@ -308,14 +358,18 @@ function MyApplications() {
                         </p>
                       )}
 
+                      {/* Accepted Offer Details */}
                       {acceptedOffer && (
                         <div className="mt-4 rounded-lg border border-green-200 bg-green-50 p-4">
                           <p className="font-semibold text-green-800">
                             Offer selected
                           </p>
+
                           <p className="mt-1 text-sm text-green-800">
-                            Demo Lender {acceptedOffer.lender_id}
+                            {acceptedOffer.lender_name ||
+                              `Demo Lender ${acceptedOffer.lender_id}`}
                           </p>
+
                           <p className="mt-1 text-sm text-green-800">
                             ₹{formatMoney(acceptedOffer.offered_amount)} at{' '}
                             {Number(
@@ -323,13 +377,15 @@ function MyApplications() {
                             ).toFixed(2)}% p.a. for{' '}
                             {acceptedOffer.tenure_months} months
                           </p>
+
                           <p className="mt-2 text-xs text-green-800">
-                            This records your selection in the demo system; it
-                            is not lender approval.
+                            This records your selection in the demo system;
+                            it is not lender approval.
                           </p>
                         </div>
                       )}
 
+                      {/* Pending Offers */}
                       {hasOffers && !acceptedOffer && (
                         <p className="mt-3 text-sm text-gray-600">
                           {offers.length} simulated offer
@@ -338,13 +394,16 @@ function MyApplications() {
                         </p>
                       )}
 
+                      {/* View Offers Button */}
                       {canViewOffers && (
                         <Link
                           to="/offers"
-                          state={{ application }}
+                          state={{ applicationId: application.id }}
                           className="mt-4 inline-flex rounded-lg border border-blue-600 px-4 py-2.5 font-medium text-blue-700 transition hover:bg-blue-50"
                         >
-                          {acceptedOffer ? 'View selected offer' : 'View offers'}
+                          {acceptedOffer
+                            ? 'View selected offer'
+                            : 'View offers'}
                         </Link>
                       )}
                     </div>
@@ -371,7 +430,10 @@ function SummaryCard({ label, value }) {
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-5">
       <p className="text-sm text-gray-500">{label}</p>
-      <p className="mt-2 text-3xl font-bold text-gray-900">{value}</p>
+
+      <p className="mt-2 text-3xl font-bold text-gray-900">
+        {value}
+      </p>
     </div>
   )
 }

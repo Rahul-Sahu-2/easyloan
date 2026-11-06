@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 
-const API_URL = 'http://127.0.0.1:8000/api/v1'
+import { API_URL } from "../api";
 
 function formatMoney(value) {
   return Number(value || 0).toLocaleString('en-IN', {

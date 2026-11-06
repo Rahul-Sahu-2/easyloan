@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-
+from app.models.application_status_history import ApplicationStatusHistory
 from app.db.session import get_db
 from app.models.application import LoanApplication
 from app.models.offer import LoanOffer
@@ -149,18 +149,24 @@ def select_offer(
     )
 
     if not application:
-        raise HTTPException(status_code=404, detail="Offer not found for this user.")
+        raise HTTPException(
+            status_code=404,
+            detail="Offer not found for this user.",
+        )
 
     if application.status in ("CANCELLED", "REJECTED", "APPROVED"):
         raise HTTPException(
             status_code=400,
-            detail=f"Cannot select an offer because the application status is {application.status}.",
+            detail=f"Cannot select an offer because application status is {application.status}.",
         )
 
     if offer.valid_until <= datetime.utcnow():
         offer.status = "EXPIRED"
         db.commit()
-        raise HTTPException(status_code=400, detail="This offer has expired.")
+        raise HTTPException(
+            status_code=400,
+            detail="This offer has expired.",
+        )
 
     if offer.status != "PENDING":
         raise HTTPException(
@@ -183,9 +189,23 @@ def select_offer(
             detail="An offer has already been selected for this application.",
         )
 
+    old_status = application.status
+
     offer.status = "ACCEPTED"
+    application.status = "OFFER_SELECTED"
+
+    db.add(
+        ApplicationStatusHistory(
+            application_id=application.id,
+            old_status=old_status,
+            new_status="OFFER_SELECTED",
+            note="User selected a simulated loan offer",
+        )
+    )
+
     db.commit()
     db.refresh(offer)
+    db.refresh(application)
 
     return serialize_offer(offer, db)
 
