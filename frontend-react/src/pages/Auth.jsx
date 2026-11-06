@@ -1,10 +1,8 @@
-
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
-
-import { API_URL } from "../api";
+import { API_URL } from '../api'
 
 function Auth() {
   const location = useLocation()
@@ -13,17 +11,24 @@ function Auth() {
 
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
     password: '',
   })
+
   const [message, setMessage] = useState('')
   const [messageType, setMessageType] = useState('info')
 
   function handleChange(event) {
     const { name, value } = event.target
-    setFormData((previous) => ({ ...previous, [name]: value }))
+
+    setFormData((previous) => ({
+      ...previous,
+      [name]: value,
+    }))
+
     setMessage('')
   }
 
@@ -53,6 +58,7 @@ function Auth() {
 
     try {
       const endpoint = isSignup ? 'register' : 'login'
+
       const payload = isSignup
         ? {
             full_name: formData.fullName.trim(),
@@ -66,7 +72,9 @@ function Auth() {
 
       const response = await fetch(`${API_URL}/auth/${endpoint}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(payload),
       })
 
@@ -74,6 +82,7 @@ function Auth() {
 
       if (!response.ok) {
         const detail = data?.detail
+
         const errorMessage = Array.isArray(detail)
           ? detail.map((item) => item.msg).join(', ')
           : typeof detail === 'string'
@@ -86,7 +95,11 @@ function Auth() {
       if (isSignup) {
         setMessage('Account created successfully! You can now log in.')
         setMessageType('success')
-        setFormData((previous) => ({ ...previous, password: '' }))
+
+        setFormData((previous) => ({
+          ...previous,
+          password: '',
+        }))
       } else {
         const user = data?.user
 
@@ -97,6 +110,7 @@ function Auth() {
         }
 
         localStorage.setItem('easyloan_user', JSON.stringify(user))
+
         navigate('/', { replace: true })
       }
     } catch (error) {
@@ -105,6 +119,7 @@ function Auth() {
           ? 'Cannot reach the backend. Make sure FastAPI is running.'
           : error.message || 'Something went wrong. Please try again.'
       )
+
       setMessageType('error')
     } finally {
       setIsLoading(false)
@@ -117,6 +132,7 @@ function Auth() {
 
       <main className="flex flex-1 items-center justify-center px-4 py-12">
         <div className="grid w-full max-w-5xl overflow-hidden rounded-2xl bg-white shadow-lg md:grid-cols-2">
+
           <section className="hidden bg-gradient-to-br from-blue-600 to-blue-800 p-10 text-white md:flex md:flex-col md:justify-center">
             <Link to="/" className="mb-10 text-3xl font-bold">
               EasyLoan
@@ -143,7 +159,7 @@ function Auth() {
               to="/"
               className="mb-6 inline-block text-sm font-medium text-blue-600 hover:text-blue-700 md:hidden"
             >
-              ← Back to EasyLoan
+              Back to EasyLoan
             </Link>
 
             <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-blue-600">
@@ -161,6 +177,7 @@ function Auth() {
             </p>
 
             <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+
               {isSignup && (
                 <div>
                   <label
@@ -169,6 +186,7 @@ function Auth() {
                   >
                     Full name
                   </label>
+
                   <input
                     id="fullName"
                     name="fullName"
@@ -192,6 +210,7 @@ function Auth() {
                 >
                   Email address
                 </label>
+
                 <input
                   id="email"
                   name="email"
@@ -219,7 +238,9 @@ function Auth() {
                     id="password"
                     name="password"
                     type={showPassword ? 'text' : 'password'}
-                    autoComplete={isSignup ? 'new-password' : 'current-password'}
+                    autoComplete={
+                      isSignup ? 'new-password' : 'current-password'
+                    }
                     value={formData.password}
                     onChange={handleChange}
                     placeholder="At least 8 characters"
@@ -228,6 +249,7 @@ function Auth() {
                     disabled={isLoading}
                     className="w-full rounded-lg border border-gray-300 px-4 py-3 pr-20 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   />
+
                   <button
                     type="button"
                     onClick={() => setShowPassword((value) => !value)}
@@ -269,7 +291,10 @@ function Auth() {
             </form>
 
             <p className="mt-6 text-center text-sm text-gray-500">
-              {isSignup ? 'Already have an account?' : "Don't have an account?"}{' '}
+              {isSignup
+                ? 'Already have an account?'
+                : "Don't have an account?"}{' '}
+
               <Link
                 to={isSignup ? '/login' : '/signup'}
                 className="font-semibold text-blue-600 hover:text-blue-800"
@@ -289,8 +314,7 @@ function Auth() {
             )}
 
             <p className="mt-6 text-center text-xs leading-5 text-gray-400">
-              Demo project. Authentication requests are sent to your development
-              backend.
+              Demo project. Authentication requests are sent to your backend.
             </p>
           </section>
         </div>
